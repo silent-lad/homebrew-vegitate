@@ -33,9 +33,9 @@ dependencies = [
 vegitate = "vegitate.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/silent-lad/vegitate"
-Repository = "https://github.com/silent-lad/vegitate"
-Issues = "https://github.com/silent-lad/vegitate/issues"
+Homepage = "https://github.com/silent-lad/homebrew-vegitate"
+Repository = "https://github.com/silent-lad/homebrew-vegitate"
+Issues = "https://github.com/silent-lad/homebrew-vegitate/issues"
 
 [tool.setuptools.packages.find]
 where = ["src"]

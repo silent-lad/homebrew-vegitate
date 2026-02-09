@@ -2,11 +2,11 @@ class Vegitate < Formula
   include Language::Python::Virtualenv
 
   desc "Keep your Mac caffeinated while locking all keyboard and mouse input"
-  homepage "https://github.com/silent-lad/vegitate"
-  url "https://github.com/silent-lad/vegitate/archive/refs/tags/v0.1.0.tar.gz"
-  sha256 "RELEASE_SHA256"
+  homepage "https://github.com/silent-lad/homebrew-vegitate"
+  url "https://github.com/silent-lad/homebrew-vegitate/archive/refs/tags/v0.1.1.tar.gz"
+  sha256 "0a50711d255a2907368ef365a1707e72cf762f3787ba54078ebcdfc574097783"
   license "MIT"
-  head "https://github.com/silent-lad/vegitate.git", branch: "main"
+  head "https://github.com/silent-lad/homebrew-vegitate.git", branch: "main"
 
   depends_on :macos
   depends_on "python@3.13"

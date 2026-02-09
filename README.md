@@ -6,7 +6,6 @@ Perfect for leaving AI agents, builds, or long-running tasks unattended — the 
 
 ![Vegitate header](header.png)
 
-
 ## What it does
 
 1. **Caffeinate** — wraps macOS `caffeinate -dis` to prevent display, idle, and system sleep
@@ -16,7 +15,7 @@ Perfect for leaving AI agents, builds, or long-running tasks unattended — the 
 
 ## Install
 
-### Homebrew (recommended)
+### Homebrew
 
 ```bash
 brew tap silent-lad/vegitate
@@ -26,17 +25,16 @@ brew install vegitate
 ### pip / pipx
 
 ```bash
-# With pipx (isolated install, recommended)
 pipx install vegitate
 
-# Or with pip
+# or
 pip install vegitate
 ```
 
 ### From source
 
 ```bash
-git clone https://github.com/silent-lad/vegitate.git
+git clone https://github.com/silent-lad/homebrew-vegitate.git
 cd vegitate
 python -m venv .venv && source .venv/bin/activate
 pip install .
@@ -100,15 +98,9 @@ If you forget your unlock combo, there's a **built-in panic sequence** that alwa
 
 This immediately unlocks input and stops vegitate. No modifiers needed, no combo to remember — just mash Escape.
 
-### Other emergency options
-
-If even that doesn't work (shouldn't happen), kill the process from another terminal or SSH:
+You can also kill the process from another terminal or SSH:
 
 ```bash
-# The PID is shown on the lock screen
-kill <pid>
-
-# Or find it
 pkill -f vegitate
 ```
 
@@ -133,98 +125,10 @@ pkill -f vegitate
                     └─────────────┘
 ```
 
-- `CGEventTapCreate` at `kCGSessionEventTap` with `kCGHeadInsertEventTap` intercepts events before any application sees them
+- `CGEventTapCreate` at `kCGSessionEventTap` intercepts events before any application sees them
 - Returning `None` from the callback suppresses the event entirely
 - The unlock combo is detected inside the callback itself, so it works even while everything else is blocked
 - If macOS disables the tap (timeout), it is automatically re-enabled
-
-## Development
-
-```bash
-git clone https://github.com/silent-lad/vegitate.git
-cd vegitate
-python -m venv .venv && source .venv/bin/activate
-pip install -e .
-
-# Run from source
-vegitate --help
-python -m vegitate --help
-```
-
-### Project structure
-
-```
-vegitate/
-├── src/vegitate/
-│   ├── __init__.py      # Version
-│   ├── __main__.py      # python -m vegitate
-│   ├── cli.py           # Argument parsing & entry point
-│   ├── core.py          # Event tap + caffeinate logic
-│   ├── keys.py          # macOS keycodes & combo parser
-│   └── display.py       # Rich terminal UI
-├── Formula/
-│   └── vegitate.rb      # Homebrew formula (brew style validated)
-├── scripts/
-│   └── generate_formula.py  # Regenerate formula from PyPI
-├── pyproject.toml       # Package metadata
-├── Makefile             # Dev shortcuts
-├── LICENSE              # MIT
-└── README.md
-```
-
-### Publishing to Homebrew
-
-The repo ships a complete, `brew style`-validated formula at `Formula/vegitate.rb` with all dependency hashes pre-computed. To publish:
-
-**1. Push the repo to GitHub**
-
-```bash
-git remote add origin https://github.com/silent-lad/vegitate.git
-git push -u origin main
-```
-
-**2. Create a GitHub release**
-
-```bash
-git tag v0.1.0
-git push origin v0.1.0
-```
-
-Then go to the GitHub release page and create a release for the tag.
-
-**3. Fill in the release sha256**
-
-```bash
-curl -sL https://github.com/silent-lad/vegitate/archive/refs/tags/v0.1.0.tar.gz | shasum -a 256
-```
-
-Replace `RELEASE_SHA256` in `Formula/vegitate.rb` with the output.
-
-**4. Create the Homebrew tap**
-
-Create a new repo named `homebrew-vegitate` on GitHub, then:
-
-```bash
-mkdir homebrew-vegitate && cd homebrew-vegitate
-git init && mkdir Formula
-cp /path/to/vegitate/Formula/vegitate.rb Formula/
-git add -A && git commit -m "Add vegitate formula"
-git remote add origin https://github.com/silentlad/homebrew-vegitate.git
-git push -u origin main
-```
-
-**5. Users install with:**
-
-```bash
-brew tap silent-lad/vegitate
-brew install vegitate
-```
-
-**Updating dependency hashes** — if you bump dependencies, regenerate the formula:
-
-```bash
-python scripts/generate_formula.py
-```
 
 ## Requirements
 

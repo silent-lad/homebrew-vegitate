@@ -55,7 +55,7 @@ class Display:
             highlight=False,
         )
         self.console.print(
-            f"  [dim]v{version} · github.com/silent-lad/vegitate[/]"
+            f"  [dim]v{version} · github.com/silent-lad/homebrew-vegitate[/]"
         )
         self.console.print()
 

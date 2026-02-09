@@ -79,24 +79,24 @@ def build_formula(version: str, head_only: bool = False) -> str:
     resource_block = "\n\n".join(resources)
 
     if head_only:
-        url_block = '  head "https://github.com/silent-lad/vegitate.git", branch: "main"'
+        url_block = '  head "https://github.com/silent-lad/homebrew-vegitate.git", branch: "main"'
     else:
         url_block = textwrap.dedent(f"""\
-          url "https://github.com/silent-lad/vegitate/archive/refs/tags/v{version}.tar.gz"
+          url "https://github.com/silent-lad/homebrew-vegitate/archive/refs/tags/v{version}.tar.gz"
           # After creating the GitHub release, fill in the real sha256 with:
           #   brew fetch --force vegitate
           # or:
           #   curl -sL <url> | shasum -a 256
           sha256 "RELEASE_SHA256"
           license "MIT"
-          head "https://github.com/silent-lad/vegitate.git", branch: "main\"""")
+          head "https://github.com/silent-lad/homebrew-vegitate.git", branch: "main\"""")
 
     formula = textwrap.dedent(f"""\
         class Vegitate < Formula
           include Language::Python::Virtualenv
 
           desc "Keep your Mac caffeinated while locking all keyboard and mouse input"
-          homepage "https://github.com/silent-lad/vegitate"
+          homepage "https://github.com/silent-lad/homebrew-vegitate"
           {url_block}
 
           depends_on :macos
