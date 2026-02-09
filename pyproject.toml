@@ -1,0 +1,41 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vegitate"
+version = "0.1.0"
+description = "Keep your Mac caffeinated while locking all keyboard and mouse input."
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.10"
+authors = [{ name = "silent-lad" }]
+keywords = ["macos", "caffeinate", "input-lock", "kiosk", "screen-lock", "cli"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Environment :: MacOS X",
+    "Intended Audience :: Developers",
+    "Operating System :: MacOS",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Utilities",
+]
+dependencies = [
+    "pyobjc-framework-Quartz",
+    "rich>=13.0",
+]
+
+[project.scripts]
+vegitate = "vegitate.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/silent-lad/vegitate"
+Repository = "https://github.com/silent-lad/vegitate"
+Issues = "https://github.com/silent-lad/vegitate/issues"
+
+[tool.setuptools.packages.find]
+where = ["src"]
