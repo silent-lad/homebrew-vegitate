@@ -4,14 +4,8 @@
 
 Perfect for leaving AI agents, builds, or long-running tasks unattended — the screen stays on, but nobody can type, click, or scroll until you press your secret key combination.
 
-```
-                   _ __        __
- _   _____  ____ _(_) /_____ _/ /____
-| | / / _ \/ __ `/ / __/ __ `/ __/ _ \
-| |/ /  __/ /_/ / / /_/ /_/ / /_/  __/
-|___/\___/\__, /_/\__/\__,_/\__/\___/
-         /____/
-```
+![Vegitate header](header.png)
+
 
 ## What it does
 
