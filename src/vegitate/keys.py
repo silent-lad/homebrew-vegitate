@@ -39,11 +39,6 @@ ALL_MODIFIER_BITS: int = (
     | Quartz.kCGEventFlagMaskAlternate
 )
 
-# Hard-reset panic sequence: Escape pressed N times within a time window.
-PANIC_KEY: int = KEY_MAP["escape"]  # keycode 53
-PANIC_TAPS: int = 5                 # number of presses required
-PANIC_WINDOW: float = 2.0           # seconds
-
 # Canonical names for display
 _CANONICAL: dict[str, str] = {
     "command": "cmd", "control": "ctrl", "option": "alt", "opt": "alt",

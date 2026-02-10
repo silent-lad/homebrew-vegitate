@@ -22,12 +22,9 @@ brew tap silent-lad/vegitate
 brew install vegitate
 ```
 
-### pip / pipx
+### pip
 
 ```bash
-pipx install vegitate
-
-# or
 pip install vegitate
 ```
 
@@ -68,12 +65,13 @@ You only need to do this once.
 
 ## Options
 
-| Flag                  | Default      | Description                                  |
+| Flag / Command        | Default      | Description                                  |
 | --------------------- | ------------ | -------------------------------------------- |
 | `-c`, `--combo COMBO` | `ctrl+cmd+u` | Unlock key combination                       |
 | `--allow-mouse-move`  | off          | Allow cursor movement (clicks still blocked) |
 | `--no-caffeinate`     | off          | Skip starting caffeinate                     |
 | `-V`, `--version`     | —            | Show version and exit                        |
+| `init`                | —            | Generate default config at `~/.config/vegitate/config.toml` |
 
 ### Combo format
 
@@ -90,13 +88,44 @@ vegitate -c ctrl+alt+shift+q    # quad-key combo
 vegitate -c cmd+shift+l         # simple lock/unlock
 ```
 
+## Config file
+
+vegitate reads settings from `~/.config/vegitate/config.toml`. Generate the default config:
+
+```bash
+vegitate init
+```
+
+This creates:
+
+```toml
+# ~/.config/vegitate/config.toml
+
+# Unlock key combination
+combo = "ctrl+cmd+u"
+
+# Allow mouse cursor movement while locked
+allow_mouse_move = false
+
+# Start caffeinate to prevent sleep
+caffeinate = true
+
+# Panic reset: press a key rapidly N times to force-unlock
+# Set panic_taps = 0 to disable
+panic_key = "escape"
+panic_taps = 5
+panic_window = 2.0   # seconds
+```
+
+CLI flags always override config values. Edit the file to change your defaults, and pass flags for one-off overrides.
+
 ## Hard reset
 
-If you forget your unlock combo, there's a **built-in panic sequence** that always works and can't be disabled:
+By default, there's a **built-in panic sequence** that always works:
 
 > **Press Escape 5 times rapidly** (within 2 seconds)
 
-This immediately unlocks input and stops vegitate. No modifiers needed, no combo to remember — just mash Escape.
+This immediately unlocks input and stops vegitate. You can customise which key, how many taps, and the time window in the config file. Set `panic_taps = 0` to disable it entirely.
 
 You can also kill the process from another terminal or SSH:
 

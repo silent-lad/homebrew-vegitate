@@ -27,6 +27,7 @@ classifiers = [
 dependencies = [
     "pyobjc-framework-Quartz",
     "rich>=13.0",
+    "tomli>=1.0; python_version < '3.11'",
 ]
 
 [project.scripts]

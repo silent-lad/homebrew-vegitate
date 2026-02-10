@@ -16,9 +16,7 @@ from . import __version__
 from .display import Display
 from .keys import (
     ALL_MODIFIER_BITS,
-    PANIC_KEY,
-    PANIC_TAPS,
-    PANIC_WINDOW,
+    KEY_MAP,
     format_combo,
     parse_combo,
 )
@@ -36,6 +34,9 @@ class Vegitate:
         unlock_combo: str = "ctrl+cmd+u",
         allow_mouse_move: bool = False,
         use_caffeinate: bool = True,
+        panic_key: str = "escape",
+        panic_taps: int = 5,
+        panic_window: float = 2.0,
     ) -> None:
         self.combo_str = unlock_combo
         self.combo_display = format_combo(unlock_combo)
@@ -43,13 +44,21 @@ class Vegitate:
         self.allow_mouse_move = allow_mouse_move
         self.use_caffeinate = use_caffeinate
 
+        # Panic reset settings
+        self.panic_keycode = KEY_MAP.get(panic_key.lower(), KEY_MAP["escape"])
+        self.panic_taps = panic_taps
+        self.panic_window = panic_window
+        self.panic_enabled = panic_taps > 0
+
         self.display = Display()
         self.event_tap: object | None = None
         self.run_loop_source: object | None = None
         self.caffeinate_proc: subprocess.Popen | None = None
 
-        # Panic sequence: timestamps of recent Escape key-down events.
-        self._panic_times: deque[float] = deque(maxlen=PANIC_TAPS)
+        # Panic sequence: timestamps of recent key-down events.
+        self._panic_times: deque[float] = deque(
+            maxlen=max(panic_taps, 1)
+        )
 
     # ------------------------------------------------------------------ #
     #  caffeinate                                                         #
@@ -134,13 +143,13 @@ class Vegitate:
                 self._unlock()
                 return None  # swallow the unlock keystroke
 
-            # --- hard-reset panic sequence (Escape × 5 in 2 s) ---
-            if keycode == PANIC_KEY:
+            # --- configurable panic reset ---
+            if self.panic_enabled and keycode == self.panic_keycode:
                 now = time.time()
                 self._panic_times.append(now)
                 if (
-                    len(self._panic_times) == PANIC_TAPS
-                    and now - self._panic_times[0] <= PANIC_WINDOW
+                    len(self._panic_times) == self.panic_taps
+                    and now - self._panic_times[0] <= self.panic_window
                 ):
                     self._unlock()
                     return None

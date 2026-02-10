@@ -312,6 +312,40 @@
     .terminal-body .flag { color: var(--yellow); }
     .terminal-body .arg { color: var(--cyan); }
 
+    /* ── Config ─────────────────────────  */
+
+    .config {
+      padding: 5rem 2rem;
+      max-width: 700px;
+      margin: 0 auto;
+    }
+
+    .config-inner {
+      max-width: 700px;
+      margin: 0 auto;
+    }
+
+    .config h2 {
+      font-size: 1.5rem;
+      margin-bottom: 1.5rem;
+      text-align: center;
+      color: var(--green);
+      font-family: var(--mono);
+    }
+
+    .config-desc {
+      text-align: center;
+      color: var(--text-dim);
+      margin-bottom: 2rem;
+      font-size: 0.95rem;
+    }
+
+    .config-desc code {
+      color: var(--yellow);
+      font-family: var(--mono);
+      font-size: 0.85rem;
+    }
+
     /* ── How it works ─────────────────── */
 
     .how {
@@ -468,8 +502,8 @@
         <div class="cmd" onclick="copyCmd(this)">brew tap silent-lad/vegitate && brew install vegitate</div>
       </div>
       <div class="install-card">
-        <h3>pip / pipx</h3>
-        <div class="cmd" onclick="copyCmd(this)">pipx install vegitate</div>
+        <h3>pip</h3>
+        <div class="cmd" onclick="copyCmd(this)">pip install vegitate</div>
       </div>
     </div>
   </section>
@@ -501,7 +535,12 @@
       <div class="feature">
         <div class="feature-icon">&#128680;</div>
         <h3>Panic Reset</h3>
-        <p>Press Escape 5 times rapidly to force-unlock. Built-in, always works, can't be disabled.</p>
+        <p>Press Escape 5 times rapidly to force-unlock. Customise the key, tap count, and window in the config file.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">&#9881;</div>
+        <h3>Config File</h3>
+        <p>Persistent settings in <code>~/.config/vegitate/config.toml</code>. Set your combo, panic key, and preferences once.</p>
       </div>
       <div class="feature">
         <div class="feature-icon">&#128187;</div>
@@ -539,6 +578,45 @@
           <br>
           <div><span class="comment"># Skip caffeinate if running separately</span></div>
           <div><span class="prompt">$</span> vegitate <span class="flag">--no-caffeinate</span></div>
+          <br>
+          <div><span class="comment"># Generate default config file</span></div>
+          <div><span class="prompt">$</span> vegitate <span class="arg">init</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Config -->
+  <section class="config">
+    <div class="config-inner">
+      <h2># config file</h2>
+      <p class="config-desc">
+        Run <code>vegitate init</code> to create <code>~/.config/vegitate/config.toml</code>.
+        Edit it to set your defaults. CLI flags always override config values.
+      </p>
+      <div class="terminal">
+        <div class="terminal-bar">
+          <span class="terminal-dot r"></span>
+          <span class="terminal-dot y"></span>
+          <span class="terminal-dot g"></span>
+        </div>
+        <div class="terminal-body">
+          <div><span class="comment"># ~/.config/vegitate/config.toml</span></div>
+          <br>
+          <div><span class="comment"># Unlock key combination</span></div>
+          <div><span class="arg">combo</span> = <span class="flag">"ctrl+cmd+u"</span></div>
+          <br>
+          <div><span class="comment"># Allow mouse cursor movement while locked</span></div>
+          <div><span class="arg">allow_mouse_move</span> = <span class="flag">false</span></div>
+          <br>
+          <div><span class="comment"># Start caffeinate to prevent sleep</span></div>
+          <div><span class="arg">caffeinate</span> = <span class="flag">true</span></div>
+          <br>
+          <div><span class="comment"># Panic reset: press a key rapidly N times</span></div>
+          <div><span class="comment"># Set panic_taps = 0 to disable</span></div>
+          <div><span class="arg">panic_key</span> = <span class="flag">"escape"</span></div>
+          <div><span class="arg">panic_taps</span> = <span class="flag">5</span></div>
+          <div><span class="arg">panic_window</span> = <span class="flag">2.0</span></div>
         </div>
       </div>
     </div>
@@ -592,6 +670,7 @@
           <tr><td>--allow-mouse-move</td><td>off</td><td>Allow cursor movement, clicks still blocked</td></tr>
           <tr><td>--no-caffeinate</td><td>off</td><td>Skip starting caffeinate</td></tr>
           <tr><td>-V, --version</td><td>&mdash;</td><td>Show version and exit</td></tr>
+          <tr><td>init</td><td>&mdash;</td><td>Generate default config at <code>~/.config/vegitate/config.toml</code></td></tr>
         </tbody>
       </table>
     </div>
