@@ -106,23 +106,38 @@ pkill -f vegitate
 
 ## How it works
 
+```mermaid
+graph LR
+    A["vegitate"] --> B["caffeinate -dis"]
+    A --> C["CGEventTap"]
+    A --> D["Rich Live Dashboard"]
+
+    B -.- B1["Prevents display,\nidle & system sleep"]
+    C -.- C1["Intercepts all HID\nevents at session level"]
+    D -.- D1["Lock screen\nwith live timer"]
+
+    style A fill:#22c55e,stroke:#16a34a,color:#000,font-weight:bold
+    style B fill:#1a2233,stroke:#4ade80,color:#e2e8f0
+    style C fill:#1a2233,stroke:#4ade80,color:#e2e8f0
+    style D fill:#1a2233,stroke:#4ade80,color:#e2e8f0
+    style B1 fill:none,stroke:none,color:#94a3b8
+    style C1 fill:none,stroke:none,color:#94a3b8
+    style D1 fill:none,stroke:none,color:#94a3b8
 ```
-┌─────────────┐     ┌────────────────┐     ┌───────────────┐
-│  caffeinate  │     │  CGEventTap    │     │  Rich Live    │
-│  -dis        │     │  (session tap) │     │  Dashboard    │
-│              │     │                │     │               │
-│  Prevents    │     │  Intercepts    │     │  Lock screen  │
-│  display +   │     │  all HID input │     │  with timer   │
-│  idle sleep  │     │  Returns None  │     │  & status     │
-│              │     │  to suppress   │     │               │
-└─────────────┘     └────────────────┘     └───────────────┘
-                           │
-                    ┌──────┴──────┐
-                    │ Unlock combo │
-                    │ detected?    │
-                    │ → cleanup    │
-                    │ → restore    │
-                    └─────────────┘
+
+```mermaid
+flowchart TD
+    E["HID Event\n(key / mouse / scroll)"] --> F{"CGEventTap\nCallback"}
+    F -->|"Unlock combo\ndetected"| G["Restore input\nStop caffeinate\nExit cleanly"]
+    F -->|"Escape ×5\npanic reset"| G
+    F -->|"Any other\nevent"| H["Return None\n(suppress)"]
+    H --> I["Event blocked —\nnever reaches apps"]
+
+    style E fill:#1a2233,stroke:#67e8f9,color:#e2e8f0
+    style F fill:#1a2233,stroke:#fbbf24,color:#e2e8f0
+    style G fill:#22c55e,stroke:#16a34a,color:#000,font-weight:bold
+    style H fill:#1a2233,stroke:#f87171,color:#e2e8f0
+    style I fill:none,stroke:none,color:#94a3b8
 ```
 
 - `CGEventTapCreate` at `kCGSessionEventTap` intercepts events before any application sees them
