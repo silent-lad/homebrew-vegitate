@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>vegitate — Keep your Mac awake while locking all input</title>
+  <meta name="description" content="macOS CLI tool that wraps caffeinate to keep your display awake while blocking all keyboard and mouse input. Perfect for unattended AI agents, builds, and long-running tasks.">
+  <meta property="og:title" content="vegitate — Lock input, keep display alive">
+  <meta property="og:description" content="macOS CLI tool that keeps your display awake while blocking all keyboard and mouse input. Unlock with a secret key combo.">
+  <meta property="og:image" content="https://silent-lad.github.io/homebrew-vegitate/header.png">
+  <meta property="og:url" content="https://silent-lad.github.io/homebrew-vegitate/">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0a0e14;
+      --bg2: #111820;
+      --bg3: #1a2233;
+      --green: #4ade80;
+      --green-dim: #22c55e;
+      --green-glow: rgba(74, 222, 128, 0.15);
+      --cyan: #67e8f9;
+      --yellow: #fbbf24;
+      --red: #f87171;
+      --text: #e2e8f0;
+      --text-dim: #94a3b8;
+      --mono: 'JetBrains Mono', monospace;
+      --sans: 'Inter', -apple-system, sans-serif;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      line-height: 1.7;
+      overflow-x: hidden;
+    }
+
+    /* ── Hero ─────────────────────────── */
+
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 2rem;
+      background:
+        radial-gradient(ellipse at 50% 0%, rgba(74,222,128,0.08) 0%, transparent 60%),
+        var(--bg);
+    }
+
+    .hero-img {
+      width: min(680px, 90vw);
+      border-radius: 16px;
+      margin-bottom: 2rem;
+      box-shadow: 0 0 80px rgba(74,222,128,0.1);
+    }
+
+    .tagline {
+      font-size: clamp(1.1rem, 2.5vw, 1.4rem);
+      color: var(--text-dim);
+      max-width: 600px;
+      margin-bottom: 2.5rem;
+    }
+
+    .cta-group {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1.75rem;
+      border-radius: 8px;
+      font-family: var(--mono);
+      font-size: 0.95rem;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      background: var(--green);
+      color: var(--bg);
+    }
+    .btn-primary:hover {
+      background: #86efac;
+      box-shadow: 0 0 24px rgba(74,222,128,0.3);
+    }
+
+    .btn-secondary {
+      background: var(--bg3);
+      color: var(--text);
+      border: 1px solid rgba(74,222,128,0.2);
+    }
+    .btn-secondary:hover {
+      border-color: var(--green);
+      box-shadow: 0 0 16px rgba(74,222,128,0.15);
+    }
+
+    /* ── Install ──────────────────────── */
+
+    .install {
+      background: var(--bg2);
+      padding: 4rem 2rem;
+      text-align: center;
+    }
+
+    .install h2 {
+      font-size: 1.5rem;
+      margin-bottom: 2rem;
+      color: var(--green);
+      font-family: var(--mono);
+    }
+
+    .install-methods {
+      display: flex;
+      gap: 1.5rem;
+      justify-content: center;
+      flex-wrap: wrap;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .install-card {
+      background: var(--bg);
+      border: 1px solid rgba(74,222,128,0.1);
+      border-radius: 12px;
+      padding: 1.5rem 2rem;
+      flex: 1;
+      min-width: 280px;
+      text-align: left;
+    }
+
+    .install-card h3 {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-dim);
+      margin-bottom: 0.75rem;
+    }
+
+    .cmd {
+      font-family: var(--mono);
+      font-size: 0.9rem;
+      background: var(--bg3);
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      color: var(--green);
+      overflow-x: auto;
+      cursor: pointer;
+      position: relative;
+      transition: border-color 0.2s;
+      border: 1px solid transparent;
+    }
+    .cmd:hover {
+      border-color: rgba(74,222,128,0.3);
+    }
+    .cmd::after {
+      content: 'click to copy';
+      position: absolute;
+      right: 0.75rem;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 0.7rem;
+      color: var(--text-dim);
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+    .cmd:hover::after { opacity: 1; }
+    .cmd.copied::after {
+      content: 'copied!';
+      color: var(--green);
+      opacity: 1;
+    }
+
+    /* ── Features ─────────────────────── */
+
+    .features {
+      padding: 5rem 2rem;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .features h2 {
+      font-size: 1.5rem;
+      margin-bottom: 3rem;
+      text-align: center;
+      color: var(--green);
+      font-family: var(--mono);
+    }
+
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .feature {
+      background: var(--bg2);
+      border: 1px solid rgba(74,222,128,0.08);
+      border-radius: 12px;
+      padding: 1.75rem;
+    }
+
+    .feature-icon {
+      font-size: 1.75rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .feature h3 {
+      font-size: 1.05rem;
+      margin-bottom: 0.5rem;
+      color: var(--text);
+    }
+
+    .feature p {
+      font-size: 0.9rem;
+      color: var(--text-dim);
+      line-height: 1.6;
+    }
+
+    /* ── Usage ────────────────────────── */
+
+    .usage {
+      background: var(--bg2);
+      padding: 5rem 2rem;
+    }
+
+    .usage-inner {
+      max-width: 700px;
+      margin: 0 auto;
+    }
+
+    .usage h2 {
+      font-size: 1.5rem;
+      margin-bottom: 2.5rem;
+      text-align: center;
+      color: var(--green);
+      font-family: var(--mono);
+    }
+
+    .terminal {
+      background: var(--bg);
+      border: 1px solid rgba(74,222,128,0.1);
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 2rem;
+    }
+
+    .terminal-bar {
+      background: var(--bg3);
+      padding: 0.6rem 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .terminal-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+    .terminal-dot.r { background: #f87171; }
+    .terminal-dot.y { background: #fbbf24; }
+    .terminal-dot.g { background: #4ade80; }
+
+    .terminal-body {
+      padding: 1.25rem 1.5rem;
+      font-family: var(--mono);
+      font-size: 0.85rem;
+      line-height: 1.9;
+    }
+
+    .terminal-body .comment { color: #475569; }
+    .terminal-body .prompt { color: var(--green); }
+    .terminal-body .flag { color: var(--yellow); }
+    .terminal-body .arg { color: var(--cyan); }
+
+    /* ── How it works ─────────────────── */
+
+    .how {
+      padding: 5rem 2rem;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .how h2 {
+      font-size: 1.5rem;
+      margin-bottom: 2.5rem;
+      text-align: center;
+      color: var(--green);
+      font-family: var(--mono);
+    }
+
+    .steps {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .step {
+      display: flex;
+      gap: 1.25rem;
+      align-items: flex-start;
+    }
+
+    .step-num {
+      flex-shrink: 0;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--bg3);
+      border: 1px solid rgba(74,222,128,0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--mono);
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--green);
+    }
+
+    .step-content h3 {
+      font-size: 1rem;
+      margin-bottom: 0.25rem;
+    }
+
+    .step-content p {
+      font-size: 0.9rem;
+      color: var(--text-dim);
+    }
+
+    /* ── Options table ────────────────── */
+
+    .options {
+      background: var(--bg2);
+      padding: 5rem 2rem;
+    }
+
+    .options-inner {
+      max-width: 750px;
+      margin: 0 auto;
+    }
+
+    .options h2 {
+      font-size: 1.5rem;
+      margin-bottom: 2.5rem;
+      text-align: center;
+      color: var(--green);
+      font-family: var(--mono);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th {
+      text-align: left;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-dim);
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid rgba(74,222,128,0.1);
+    }
+
+    td {
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid rgba(255,255,255,0.03);
+      font-size: 0.9rem;
+    }
+
+    td:first-child {
+      font-family: var(--mono);
+      color: var(--yellow);
+      white-space: nowrap;
+    }
+
+    /* ── Footer ───────────────────────── */
+
+    .footer {
+      text-align: center;
+      padding: 3rem 2rem;
+      border-top: 1px solid rgba(74,222,128,0.08);
+    }
+
+    .footer p {
+      color: var(--text-dim);
+      font-size: 0.85rem;
+    }
+
+    .footer a {
+      color: var(--green);
+      text-decoration: none;
+    }
+    .footer a:hover { text-decoration: underline; }
+
+    /* ── Responsive ───────────────────── */
+
+    @media (max-width: 600px) {
+      .install-methods { flex-direction: column; }
+      .feature-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Hero -->
+  <section class="hero">
+    <img src="header.png" alt="vegitate" class="hero-img">
+    <p class="tagline">
+      Keep your Mac awake and displaying output while locking all keyboard and mouse input.
+      Perfect for unattended AI agents, builds, and long-running tasks.
+    </p>
+    <div class="cta-group">
+      <a href="https://github.com/silent-lad/homebrew-vegitate" class="btn btn-primary">
+        View on GitHub
+      </a>
+      <a href="#install" class="btn btn-secondary">
+        Install
+      </a>
+    </div>
+  </section>
+
+  <!-- Install -->
+  <section class="install" id="install">
+    <h2># install</h2>
+    <div class="install-methods">
+      <div class="install-card">
+        <h3>Homebrew</h3>
+        <div class="cmd" onclick="copyCmd(this)">brew tap silent-lad/vegitate && brew install vegitate</div>
+      </div>
+      <div class="install-card">
+        <h3>pip / pipx</h3>
+        <div class="cmd" onclick="copyCmd(this)">pipx install vegitate</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section class="features">
+    <h2># features</h2>
+    <div class="feature-grid">
+      <div class="feature">
+        <div class="feature-icon">&#9749;</div>
+        <h3>Caffeinate</h3>
+        <p>Wraps macOS <code>caffeinate -dis</code> to prevent display, idle, and system sleep. Your screen stays on.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">&#128274;</div>
+        <h3>Lock All Input</h3>
+        <p>System-wide CGEventTap intercepts and suppresses every keyboard, mouse, scroll, and trackpad event.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">&#128273;</div>
+        <h3>Secret Unlock Combo</h3>
+        <p>Set your own key combination. Only you know it. Not shown on the lock screen.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">&#9200;</div>
+        <h3>Live Dashboard</h3>
+        <p>Rich-powered lock screen with a real-time session timer. Looks clean, stays out of the way.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">&#128680;</div>
+        <h3>Panic Reset</h3>
+        <p>Press Escape 5 times rapidly to force-unlock. Built-in, always works, can't be disabled.</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">&#128187;</div>
+        <h3>CLI Native</h3>
+        <p>No GUI. Pure terminal tool. Install with Homebrew or pip, run from any shell.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Usage -->
+  <section class="usage">
+    <div class="usage-inner">
+      <h2># usage</h2>
+      <div class="terminal">
+        <div class="terminal-bar">
+          <span class="terminal-dot r"></span>
+          <span class="terminal-dot y"></span>
+          <span class="terminal-dot g"></span>
+        </div>
+        <div class="terminal-body">
+          <div><span class="comment"># Lock with default combo (ctrl + cmd + u)</span></div>
+          <div><span class="prompt">$</span> vegitate</div>
+          <br>
+          <div><span class="comment"># Custom unlock combo</span></div>
+          <div><span class="prompt">$</span> vegitate <span class="flag">-c</span> <span class="arg">ctrl+shift+q</span></div>
+          <br>
+          <div><span class="comment"># Allow mouse cursor movement (clicks still blocked)</span></div>
+          <div><span class="prompt">$</span> vegitate <span class="flag">--allow-mouse-move</span></div>
+          <br>
+          <div><span class="comment"># Skip caffeinate if running separately</span></div>
+          <div><span class="prompt">$</span> vegitate <span class="flag">--no-caffeinate</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- How it works -->
+  <section class="how">
+    <h2># how it works</h2>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-content">
+          <h3>Caffeinate</h3>
+          <p>Starts <code>caffeinate -dis</code> to prevent display, idle, and system sleep.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-content">
+          <h3>Event Tap</h3>
+          <p>Creates a <code>CGEventTap</code> at <code>kCGSessionEventTap</code> that intercepts all HID events before any application sees them. Returns <code>None</code> to suppress.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-content">
+          <h3>Unlock Detection</h3>
+          <p>Your secret key combo is detected inside the tap callback itself. When matched, the tap is removed, caffeinate stops, and input is fully restored.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-content">
+          <h3>Auto Re-enable</h3>
+          <p>If macOS disables the tap (timeout), it is automatically re-enabled. The lock never silently breaks.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Options -->
+  <section class="options">
+    <div class="options-inner">
+      <h2># options</h2>
+      <table>
+        <thead>
+          <tr><th>Flag</th><th>Default</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>-c, --combo</td><td>ctrl+cmd+u</td><td>Unlock key combination</td></tr>
+          <tr><td>--allow-mouse-move</td><td>off</td><td>Allow cursor movement, clicks still blocked</td></tr>
+          <tr><td>--no-caffeinate</td><td>off</td><td>Skip starting caffeinate</td></tr>
+          <tr><td>-V, --version</td><td>&mdash;</td><td>Show version and exit</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <p>
+      MIT License &middot;
+      <a href="https://github.com/silent-lad/homebrew-vegitate">GitHub</a> &middot;
+      Made for macOS &middot; Python 3.10+
+    </p>
+  </footer>
+
+  <script>
+    function copyCmd(el) {
+      navigator.clipboard.writeText(el.textContent.trim());
+      el.classList.add('copied');
+      setTimeout(() => el.classList.remove('copied'), 1500);
+    }
+  </script>
+</body>
+</html>
