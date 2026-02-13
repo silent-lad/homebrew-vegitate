@@ -44,21 +44,44 @@ def get_version_from_source() -> str:
 
 
 def fetch_sdist_info(package: str) -> tuple[str, str, str]:
-    """Return (display_name, sdist_url, sha256) for the latest version on PyPI."""
+    """Return (display_name, sdist_url, sha256) for the latest version on PyPI.
+
+    Raises immediately on network/SSL errors instead of silently falling back.
+    """
     url = f"https://pypi.org/pypi/{package}/json"
-    with urllib.request.urlopen(url) as resp:
-        data = json.loads(resp.read())
+    try:
+        with urllib.request.urlopen(url, timeout=30) as resp:
+            data = json.loads(resp.read())
+    except Exception as exc:
+        raise RuntimeError(
+            f"Failed to fetch PyPI metadata for '{package}' from {url}\n"
+            f"  → {type(exc).__name__}: {exc}\n"
+            f"\n"
+            f"  If this is an SSL error, run:\n"
+            f"    /Applications/Python\\ 3.XX/Install\\ Certificates.command\n"
+            f"  (replace 3.XX with your Python version)"
+        ) from exc
 
     version = data["info"]["version"]
     name = data["info"]["name"]
 
     for f in data["urls"]:
         if f["packagetype"] == "sdist":
-            return name, f["url"], f["digests"]["sha256"]
+            sha = f["digests"]["sha256"]
+            if not sha or len(sha) != 64:
+                raise RuntimeError(
+                    f"Invalid SHA256 for {package} {version}: '{sha}'"
+                )
+            return name, f["url"], sha
 
     for f in data["releases"].get(version, []):
         if f["packagetype"] == "sdist":
-            return name, f["url"], f["digests"]["sha256"]
+            sha = f["digests"]["sha256"]
+            if not sha or len(sha) != 64:
+                raise RuntimeError(
+                    f"Invalid SHA256 for {package} {version}: '{sha}'"
+                )
+            return name, f["url"], sha
 
     raise RuntimeError(f"No sdist found for {package} {version}")
 
@@ -77,6 +100,15 @@ def build_formula(version: str, head_only: bool = False) -> str:
         )
 
     resource_block = "\n\n".join(resources)
+
+    # Sanity check: every resource must have a unique SHA.
+    shas = [line.split('"')[1] for r in resources for line in r.splitlines() if "sha256" in line]
+    if len(shas) != len(set(shas)):
+        raise RuntimeError(
+            "BUG: duplicate SHA256 detected across resources — "
+            "this likely means the fetch returned bad data.\n"
+            f"  SHAs: {shas}"
+        )
 
     if head_only:
         url_block = '  head "https://github.com/silent-lad/homebrew-vegitate.git", branch: "main"'
