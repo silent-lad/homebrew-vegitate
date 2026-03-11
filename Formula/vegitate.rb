@@ -9,7 +9,7 @@ class Vegitate < Formula
   head "https://github.com/silent-lad/homebrew-vegitate.git", branch: "main"
 
   depends_on :macos
-  depends_on "python@3.13"
+  depends_on "python@3.11"
 
   resource "pyobjc-core" do
     url "https://files.pythonhosted.org/packages/b8/b6/d5612eb40be4fd5ef88c259339e6313f46ba67577a95d86c3470b951fce0/pyobjc_core-12.1.tar.gz"
