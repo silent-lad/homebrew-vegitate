@@ -138,14 +138,16 @@ def fetch_sdist_info(package: str) -> tuple[str, str, str]:
 
 
 def build_formula(version: str, head_only: bool = False) -> str:
-    # Fetch all resource blocks
+    # Fetch all resource blocks — use :nounzip so Homebrew keeps .whl files
+    # intact for pip (otherwise it extracts the zip and pip tries to build
+    # from source).
     resources: list[str] = []
     for dep in PYPI_DEPS:
         print(f"  Fetching {dep} ...")
         name, url, sha = fetch_sdist_info(dep)
         resources.append(
             f'  resource "{name}" do\n'
-            f'    url "{url}"\n'
+            f'    url "{url}", using: :nounzip\n'
             f'    sha256 "{sha}"\n'
             f"  end"
         )
@@ -185,7 +187,16 @@ def build_formula(version: str, head_only: bool = False) -> str:
         resource_block,
         "",
         "  def install",
-        "    virtualenv_install_with_resources",
+        '    venv = virtualenv_create(libexec, "python3.13")',
+        "",
+        "    # Install wheel resources directly (nounzip keeps .whl intact for pip)",
+        "    resources.each do |r|",
+        "      r.stage do",
+        '        venv.pip_install Dir["*.whl"]',
+        "      end",
+        "    end",
+        "",
+        "    venv.pip_install_and_link buildpath",
         "  end",
         "",
         "  def caveats",
