@@ -15,7 +15,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import textwrap
 import urllib.request
 from pathlib import Path
 
@@ -43,15 +42,12 @@ def get_version_from_source() -> str:
     raise RuntimeError("Could not read __version__")
 
 
-def fetch_sdist_info(package: str) -> tuple[str, str, str]:
-    """Return (display_name, sdist_url, sha256) for the latest version on PyPI.
-
-    Raises immediately on network/SSL errors instead of silently falling back.
-    """
+def _fetch_pypi_data(package: str) -> dict:
+    """Fetch and return PyPI JSON metadata for *package*."""
     url = f"https://pypi.org/pypi/{package}/json"
     try:
         with urllib.request.urlopen(url, timeout=30) as resp:
-            data = json.loads(resp.read())
+            return json.loads(resp.read())
     except Exception as exc:
         raise RuntimeError(
             f"Failed to fetch PyPI metadata for '{package}' from {url}\n"
@@ -62,28 +58,83 @@ def fetch_sdist_info(package: str) -> tuple[str, str, str]:
             f"  (replace 3.XX with your Python version)"
         ) from exc
 
+
+def _find_best_file(files: list[dict], package: str, version: str) -> tuple[str, str]:
+    """Pick the best distribution file from a list of PyPI file dicts.
+
+    Preference order:
+      1. macOS universal2 wheel for cp313 (avoids needing Xcode CLT)
+      2. macOS universal2 wheel for cp3* (any Python 3)
+      3. Any macOS wheel
+      4. Pure-python (py3-none-any) wheel
+      5. sdist as last resort
+
+    Returns (url, sha256).
+    """
+    # Categorise candidates
+    macos_cp313_universal: list[dict] = []
+    macos_cp3_universal: list[dict] = []
+    macos_any: list[dict] = []
+    pure_wheel: list[dict] = []
+    sdist: list[dict] = []
+
+    for f in files:
+        fn = f.get("filename", "")
+        pt = f.get("packagetype", "")
+        if pt == "sdist":
+            sdist.append(f)
+        elif pt == "bdist_wheel":
+            if "macosx" in fn and "universal2" in fn and "cp313" in fn:
+                macos_cp313_universal.append(f)
+            elif "macosx" in fn and "universal2" in fn and "cp3" in fn:
+                macos_cp3_universal.append(f)
+            elif "macosx" in fn:
+                macos_any.append(f)
+            elif "py3-none-any" in fn:
+                pure_wheel.append(f)
+
+    for candidates in (
+        macos_cp313_universal,
+        macos_cp3_universal,
+        macos_any,
+        pure_wheel,
+        sdist,
+    ):
+        if candidates:
+            chosen = candidates[0]
+            sha = chosen["digests"]["sha256"]
+            if not sha or len(sha) != 64:
+                raise RuntimeError(
+                    f"Invalid SHA256 for {package} {version}: '{sha}'"
+                )
+            return chosen["url"], sha
+
+    raise RuntimeError(f"No suitable distribution found for {package} {version}")
+
+
+def fetch_sdist_info(package: str) -> tuple[str, str, str]:
+    """Return (display_name, url, sha256) for the best distribution on PyPI.
+
+    Prefers pre-built macOS wheels over sdists so that users don't need
+    Xcode Command Line Tools installed.
+    """
+    data = _fetch_pypi_data(package)
     version = data["info"]["version"]
     name = data["info"]["name"]
 
-    for f in data["urls"]:
-        if f["packagetype"] == "sdist":
-            sha = f["digests"]["sha256"]
-            if not sha or len(sha) != 64:
-                raise RuntimeError(
-                    f"Invalid SHA256 for {package} {version}: '{sha}'"
-                )
-            return name, f["url"], sha
+    # Try latest version files first, then fall back to releases dict
+    url, sha = (None, None)
+    if data.get("urls"):
+        url, sha = _find_best_file(data["urls"], package, version)
+    else:
+        release_files = data.get("releases", {}).get(version, [])
+        if release_files:
+            url, sha = _find_best_file(release_files, package, version)
 
-    for f in data["releases"].get(version, []):
-        if f["packagetype"] == "sdist":
-            sha = f["digests"]["sha256"]
-            if not sha or len(sha) != 64:
-                raise RuntimeError(
-                    f"Invalid SHA256 for {package} {version}: '{sha}'"
-                )
-            return name, f["url"], sha
+    if url is None:
+        raise RuntimeError(f"No distribution found for {package} {version}")
 
-    raise RuntimeError(f"No sdist found for {package} {version}")
+    return name, url, sha
 
 
 def build_formula(version: str, head_only: bool = False) -> str:
@@ -111,53 +162,51 @@ def build_formula(version: str, head_only: bool = False) -> str:
         )
 
     if head_only:
-        url_block = '  head "https://github.com/silent-lad/homebrew-vegitate.git", branch: "main"'
+        url_lines = '  head "https://github.com/silent-lad/homebrew-vegitate.git", branch: "main"'
     else:
-        url_block = textwrap.dedent(f"""\
-          url "https://github.com/silent-lad/homebrew-vegitate/archive/refs/tags/v{version}.tar.gz"
-          # After creating the GitHub release, fill in the real sha256 with:
-          #   brew fetch --force vegitate
-          # or:
-          #   curl -sL <url> | shasum -a 256
-          sha256 "RELEASE_SHA256"
-          license "MIT"
-          head "https://github.com/silent-lad/homebrew-vegitate.git", branch: "main\"""")
+        url_lines = "\n".join([
+            f'  url "https://github.com/silent-lad/homebrew-vegitate/archive/refs/tags/v{version}.tar.gz"',
+            '  sha256 "RELEASE_SHA256"',
+            '  license "MIT"',
+            '  head "https://github.com/silent-lad/homebrew-vegitate.git", branch: "main"',
+        ])
 
-    formula = textwrap.dedent(f"""\
-        class Vegitate < Formula
-          include Language::Python::Virtualenv
-
-          desc "Keep your Mac caffeinated while locking all keyboard and mouse input"
-          homepage "https://github.com/silent-lad/homebrew-vegitate"
-          {url_block}
-
-          depends_on :macos
-          depends_on "python@3.13"
-
-        {resource_block}
-
-          def install
-            virtualenv_install_with_resources
-          end
-
-          def caveats
-            <<~EOS
-              vegitate requires Accessibility permission to intercept input events.
-
-              Grant access in:
-                System Settings → Privacy & Security → Accessibility
-
-              Toggle ON for your terminal app (Terminal, iTerm2, Warp, etc.)
-            EOS
-          end
-
-          test do
-            assert_match "vegitate", shell_output("#{{bin}}/vegitate --help")
-            assert_match version.to_s, shell_output("#{{bin}}/vegitate --version")
-          end
-        end
-    """)
-    return formula
+    lines = [
+        "class Vegitate < Formula",
+        "  include Language::Python::Virtualenv",
+        "",
+        '  desc "Keep your Mac caffeinated while locking all keyboard and mouse input"',
+        '  homepage "https://github.com/silent-lad/homebrew-vegitate"',
+        url_lines,
+        "",
+        "  depends_on :macos",
+        '  depends_on "python@3.13"',
+        "",
+        resource_block,
+        "",
+        "  def install",
+        "    virtualenv_install_with_resources",
+        "  end",
+        "",
+        "  def caveats",
+        "    <<~EOS",
+        "      vegitate requires Accessibility permission to intercept input events.",
+        "",
+        "      Grant access in:",
+        "        System Settings → Privacy & Security → Accessibility",
+        "",
+        "      Toggle ON for your terminal app (Terminal, iTerm2, Warp, etc.)",
+        "    EOS",
+        "  end",
+        "",
+        "  test do",
+        '    assert_match "vegitate", shell_output("#{bin}/vegitate --help")',
+        '    assert_match version.to_s, shell_output("#{bin}/vegitate --version")',
+        "  end",
+        "end",
+        "",
+    ]
+    return "\n".join(lines)
 
 
 def main() -> None:
