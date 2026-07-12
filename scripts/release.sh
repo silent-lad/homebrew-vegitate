@@ -91,8 +91,9 @@ echo "  → Updating ${FORMULA}"
 # Update version in url line
 sed -i '' "s|archive/refs/tags/v[^\"]*\.tar\.gz|archive/refs/tags/${TAG}.tar.gz|" "$FORMULA"
 
-# Update sha256 line (matches any current value including RELEASE_SHA256)
-sed -i '' "s/sha256 \"[^\"]*\"/sha256 \"${SHA256}\"/" "$FORMULA"
+# Update sha256 on the line following the release tarball url ONLY —
+# a bare s/sha256 .../ would clobber every resource hash in the formula.
+sed -i '' "/archive\/refs\/tags/{n;s/sha256 \"[^\"]*\"/sha256 \"${SHA256}\"/;}" "$FORMULA"
 
 # Verify it looks right
 echo ""
