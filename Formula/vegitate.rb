@@ -3,8 +3,8 @@ class Vegitate < Formula
 
   desc "Keep your Mac caffeinated while locking all keyboard and mouse input"
   homepage "https://github.com/silent-lad/homebrew-vegitate"
-  url "https://github.com/silent-lad/homebrew-vegitate/archive/refs/tags/v0.1.1.tar.gz"
-  sha256 "0a50711d255a2907368ef365a1707e72cf762f3787ba54078ebcdfc574097783"
+  url "https://github.com/silent-lad/homebrew-vegitate/archive/refs/tags/v0.1.3.tar.gz"
+  sha256 "8456af974cfa42a9efc9bb40242b697277d33a1db2a2e87eb293dd61e609740c"
   license "MIT"
   head "https://github.com/silent-lad/homebrew-vegitate.git", branch: "main"
 
